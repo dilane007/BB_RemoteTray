@@ -1,0 +1,153 @@
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"> <title>FlowStorm - Massive Multithreading (MMT) Processor</title>
+</head>
+<body bgcolor="#ffffff">
+<center>
+<h3>FlowStorm <em>Porthos</em><br>
+Massive Multithreading (MMT) Packet Processor<br>
+</h3>
+<p>
+<img src="flowstorm_files/flowstorm7.gif">
+</p></center>
+<p>
+</p><h4>Overview</h4>
+The FlowStorm packet processor, <em>Porthos,</em> is shown above.  Porthos is
+designed for stateful networking applications: i.e. those applications where
+there is a requirement to support a large amount of state with
+little locality of access.  Stateful applications require a large
+number of external memory accesses, and this in turn implies a high
+degree of parallelism is needed.  Porthos utilizes multiple
+multithreaded processing engines to support this
+parallelism in a design that supports 256 simultaneous threads in
+eight processing engines.  Each thread has its own independent
+register file and executes instructions formatted to a general
+purpose ISA, while sharing execution resources and memory ports
+with other threads.
+<p>
+Porthos is optimized
+to sacrifice single threaded performance for efficiency, so that
+a design is achieved that is realizable in terms of silicon area
+and clock frequency.  We refer to such an architecture as
+<em>Massive Multithreading,</em> or MMT.  A maximum of
+one instruction can be executed from each of the threads
+depending on instruction dependencies and availability of resources.
+Porthos can achieve a sustained execution rate of 40 instructions
+per cycle (5 instructions per cycle per tribe).  The tribe pipeline
+structure that allows this is shown below.
+</p><p>
+</p><center>
+<img src="flowstorm_files/tribepipes.gif">
+</center>
+<p>
+Each tribe consists of three decoupled pipelines.  The first
+is the instruction fetch pipeline in which, in a classic SMT
+fashion, two threads are selected for fetch in each cycle and
+each can fetch four instructions from a shared data cache.
+Thus the peak fetch rate is eight instructions per cycle per
+tribe (64 instructions per cycle across the entire chip).  The
+second pipeline represents an SMP type of structure in which
+each thread is mostly independent.  Each thread block contains
+a small ALU and a single ported register file.  The third pipeline is the
+shared execute pipeline, in which complex ALU instructions
+and memory instructions are executed.  This pipeline is a
+classic SMT pipeline in which three threads simultaneously
+execute in each cycle.  Even though the peak execution rate
+is three instructions in the third pipeline, the sustained
+execution rate is greater since branch instructions and some
+simple ALU instructions are fully executed in the second
+pipeline.
+</p><p>
+The use of a general purpose ISA
+as well as other techniques achieves a design in which software
+porting issues are minimized.  Thread synchronization is
+achieved utilzing an innovative mechanism in which threads
+waiting for short-term synchronization events simply stall
+and don't consume any global execution resources for busy
+wait.
+We use the term "Massive Multithreading", or MMT, to refer to processors
+with most of the following characteristics:
+</p><ul>
+<li>A General Purpose ISA (not microengines)
+</li><li>Hardware support for large numbers of threads (100s rather than 2-8)
+</li><li>Singled threaded performance has been sacrificed, e.g.
+<ul>
+<li>no branch prediction
+</li><li>in-order issue
+</li><li>no speculative fetch
+</li><li>no speculative execution
+</li><li>single port (or less) to the register file per thread
+</li><li>no ALU bypass logic (dependent operations pass operands through register file)
+</li><li>a maximum of one operation per thread issued per cycle 
+</li></ul>
+</li></ul>
+<p>
+The following chart illustrates, that under certain assumptions for
+power consumption and memory latency, an optimal performance to power
+ratio can be achieved with single threaded performance well below the
+maximum achievable using current superscalar microarchitectures.
+</p><p>
+</p><center>
+<img src="flowstorm_files/gipsperwatt.gif" alt="GIPS per Watt vs. Single Threaded Performance">
+</center>
+<p>
+That is,
+even though it is possible to build pipelines that can support less than
+one cycle per instruction through the use of wide issue windows, out of
+order execution and branch prediction, when there are many threads
+available, this is wasteful in power.  An optimal point is shown here
+to be on the order of four to five cycles per instruction.  In practice, a
+peak CPI in the range of two to three was chosen as optimal taking into
+account packet dependencies.
+</p><p>
+</p><h4>For Further Reading</h4>
+<p>
+Melvin, S., Nemirovsky, M., Musoll, E., Huynh, J., Milito, R., Urdaneta, H., and Saraf, K.,
+<a href="http://www.zytek.com/%7Emelvin/melvin-np2a.pdf">"A Massively Multithreaded Packet
+Processor,"</a> <em>Workshop on Network Processors - NP2,</em> Held in conjunction with
+the 9th International Symposium on High-Performance Computer Architecture, February 8-9, 2003.
+<a href="http://www.zytek.com/%7Emelvin/melvin-np2-slides.pdf">Slides to Presentation</a>
+</p><p>
+(A version of this paper also appears as Chapter 6 of <em>Network Processor Design: Issues and Practices, Volume 2,</em>
+Morgan Kaufmann, 2003)<br>
+<a href="http://www.amazon.com/exec/obidos/ASIN/0121981576/stepmelvphd-20"><img src="flowstorm_files/0121981576.jpg" alt="cover" hspace="3" vspace="3" border="0"></a>
+</p><p>
+<a href="http://www.zytek.com/%7Emelvin/US23069920A1.pdf">Published U.S. Patent Application US20030069920A1</a>
+<br>
+</p><p>
+</p><h4>Various Historical Multithreaded Machines and Research</h4>
+<ul>
+<li>1970: I/O Processor of the CDC 6600 (J. Thornton)
+</li><li>1981: Denelcor HEP-1 (B. Smith)
+</li><li>1984: Denelcor HEP-3 (aka Vulture) (S. Melvin, B. Smith 
+(unpublished, but acknowledged in: Thistle, M. and Smith, B. A Processor
+ Architecture for Horizon, 1988))
+</li><li>1988: Supercompting Research Center Horizon Project (J. Kuehn, B. Smith)
+</li><li>1990: Tera Computer System (R. Alverson, D. Callahan, D. Cummings, B. Koblenz, A. Porterfield, B. Smith)
+</li><li>1991: <a href="http://www.zytek.com/%7Emelvin/melvin_dissertation.pdf">Multiple Instruction Stream Processors (Section 7.2.1), pp. 126 - 128 (Ph.D. Dissertation, S. Melvin)</a>
+</li><li>1994: <a href="http://www.zytek.com/%7Emelvin/serrano_phd.pdf">Performance Tradeoffs in Multistreamed Superscalar Architectures (Ph.D. Dissertation, M. Serrano)</a>
+</li><li>1994: Multistreamed Superscalar Processors (W. Yamamoto, M. Nemirovsky)
+</li><li>1995: Simultaneous Multithreading (D. Tullsen, S. Eggers, H. Levy)
+</li><li>1999: Compaq Alpha EV-8 (21464) (J. Emer)
+</li><li>2000: <a href="http://www.zytek.com/%7Emelvin/clearwater.html">Clearwater (XStream Logic) CNP810SP</a>
+</li><li>2001: Intel Hyperthreading
+</li><li>2001: Sun SMT Processor
+</li><li>2003: Massive Multithreading (S. Melvin, M. Nemirovsky, E. Musoll, J. Huynh, R. Milito, H. Urdaneta, K. Saraf)
+</li></ul>
+<p>
+</p><h4>A Brief History of FlowStorm, Inc.</h4>
+FlowStorm, Inc. was founded in July 2001 by Mario Nemirovsky, Stephen Melvin, Rodolfo Milito, 
+Adolfo Nemirovsky, Koroush Saraf and Hector Urdaneta (all previously from <a href="http://www.zytek.com/%7Emelvin/clearwater.html">Clearwater Networks</a>).
+The company was established to develop a packet processor utilizing the Massive Multithreading
+technology developed by the founders after leaving Clearwater.
+FlowStorm raised bridge financing in February 2002 from NEC Electronics America, Inc.
+The company was dissolved in December 2002. <a href="http://www.flowstorm.com/">www.flowstorm.com</a>
+<p>
+</p><h4>About the Author</h4>
+<a href="http://www.zytek.com/%7Emelvin">Stephen Melvin, Ph.D.</a>
+was the Chief Architect and Director of RTL Development at FlowStorm, Inc.
+from its founding in July 2001 through July 2002.  Dr. Melvin
+was responsible for defining the microarchitecure of the multithreaded
+processor core, and leading the RTL development of the other major blocks.
+<p>
+
+</p></body></html>

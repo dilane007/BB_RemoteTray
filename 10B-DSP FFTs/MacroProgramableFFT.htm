@@ -1,0 +1,168 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML><HEAD><TITLE>TechSearch</TITLE>
+        <TBODY>
+        <TR>
+<STRONG>Issue: 
+            1139</STRONG><BR><STRONG>Section: SIGNALS -- FOCUS: DSPs IN 
+            ACTION</STRONG>
+            <HR>
+            <FONT size=4><B> Macroprogrammable does FFTs</FONT></B><BR><FONT 
+            face=geneva,arial size=2>Andreas Drollinger, Research Assistant and 
+            Fausto Pellandim, Professor, Head of Laboratory, Institute of 
+            Microtechnology, University of Neuchatel, Neuchatel, 
+            Switzerland</FONT>
+            <P><EXTRACT></P>
+            <P>Not all DSP architectures are right for certain 
+            algorithms-several DSP algorithms have regular data flow structures 
+            and use just a small set of basic operations, which are repetitively 
+            executed. Take, for example, a fast Fourier transform (FFT) filter 
+            bank. Its operation set is limited to the radix-2 butterfly, but 
+            butterfly operations of a higher radix number make the FFT 
+            computation more efficient. With some supplementary simple 
+            operations, even sophisticated FFT-based filter bank algorithms like 
+            the weighted overlap add (Wola) can be performed. Gain coefficients 
+            can be applied on the processed data in the frequency 
+            domain.</P></EXTRACT>
+            <P>It's inefficient to use general-purpose DSPs for such algorithms 
+            because they do not take advantage of the algorithm's regularity to 
+            save program code or to shorten the execution time. General-purpose 
+            DSPs execute each operation individually, so they need a detailed 
+            description that includes the internal macro-operation sequence and 
+            the parameter addresses. For each operation,they have to read all 
+            that data together with control instructions. This reduces execution 
+            time and increases power consumption.</P>
+            <P>On the other hand, a hardwired processor works much faster 
+            because it doesn't lose cycles for the control instructions. But 
+            flexibility is low because of the hardwired control and data path 
+            units.</P>
+            <P>A new DSP architecture offers a solution that is flexible because 
+            it is macroprogrammable and is as efficient as hardwired processors. 
+            It's especially efficient for well-organized algorithms like 
+            FFTs.</P>
+            <P>Three functions</P>
+            <P>The data flow of a 16-complex-point FFT spectrum analyzer with a 
+            windowing and time-folding feature has three major functions: 
+            analysis, gain application and synthesis. The analysis function has 
+            three passes: The first contains multiply-accumulate (MAC) 
+            operations and is used for windowing and time folding, and the next 
+            two contain radix-4 butterfly operations. The gain application 
+            function has only one pass with multiplication operations. The last 
+            function corresponds to the first one, but the pass order and the 
+            operations are reversed.</P>
+            <P>The structuring of the FFT spectrum analyzer data flow scheme has 
+            several nice characteristics that simplify an implementation. First, 
+            each pass processes all data words. Second, each pass contains 2n 
+            operations (n=1, 2, 3 . . .). Finally, the address generation 
+            becomes very easy if the operations of a pass are processed in the 
+            correct order. These characteristics are conserved in each 
+            configuration of an algorithm family, but the detailed algorithm 
+            parameters like the number of passes or the address generation 
+            function depend on the configuration.</P>
+            <P>Dual advantage</P>
+            <P>An implementation of an algorithm that is structured in that 
+            fashion profits in two ways. On the one hand, it is helped by the 
+            fact that a pass contains only one operation type; on the other, it 
+            gains from the simplified address generation using bit-reversing 
+            functions. Because a pass contains just one operation type it isn't 
+            necessary to code each operation of the pass individually. It is 
+            enough to define the operation type once the pass begins. In that 
+            way the program code becomes smaller and the number of program 
+            memory accesses decreases. The same simplifications and advantages 
+            are possible if a parameter address follows a simple rule. But the 
+            rule has to be included in the program code instead of in a 
+            parameter word for each operation. For FFT-based algorithms the 
+            address rules can easily be coded because the rules are mostly 
+            limited to bit-reversing functions.</P>
+            <P>Our DSP architecture has been developed for tiny devices drawing 
+            ultralow power where FFT-based algorithms are used in a flexible 
+            way-for example, hearing aids. The following design constraints, 
+            which have to be satisfied by the DSP architecture, are mainly 
+            defined by the destination applications:</P>
+            <P>- Minimal hardware size (DSP size and memory requests)</P>
+            <P>- Minimal power consumption</P>
+            <P>- High flexibility</P>
+            <P>- Low supply voltage (down to 0.9 volts)</P>
+            <P>- The DSP must be able to treat the algorithms at a clock 
+            frequency of only 1 MHz because of the low-voltage-related speed 
+            reduction of CMOS gates.</P>
+            <P>The choice of DSP architecture is mainly influenced by the 
+            knowledge that all operations are the same inside a pass and that 
+            the addresses for data and coefficient follow well-defined rules. 
+            Once all parameters for a pass, including the operation type and the 
+            address rules, are defined, those parameters are sufficient to 
+            process an entire pass.</P>
+            <P>These requirements have been transformed in a basic DSP 
+            structure. The head of the DSP is the control unit. It defines at 
+            the start of each pass the pass parameters, which are transferred 
+            together with the processing or cycle state via the configuration 
+            bus to the functional units. The last ones contain address 
+            generators, data interfaces and the data path and are responsible 
+            for data processing during the pass. When a pass is completely 
+            processed, the control unit defines the configuration for the next 
+            pass and restarts the functional units. This continues until the 
+            last pass of the function has been processed. The signal start 
+            activates the DSP for the treatment of one function that is defined 
+            by function number. The end of the processing time is indicated by 
+            function end.</P>
+            <P>Data path and address generators are the most important 
+            functional units. But other units may also be realized as 
+            functional, among them interface units, control units for circular 
+            memories (FIFO) and units for block floating-point arithmetic. In 
+            the address generator, a first block creates an initial address 
+            value by selecting the relevant counter state bits. Then, this value 
+            is transformed by a bit-reversing function before the unused most 
+            significant bits are cleared by masking. The combination of the 
+            received value with an offset value may be interesting in one of the 
+            following cases: realization of circular memories (FIFO emulation), 
+            reduction of a 360-sine/cosine table or mirroring of symmetric 
+            window functions.</P>
+            <P>The data path unit contains a control part and the real data 
+            path. Depending on the requirements, the last one may contain one or 
+            more arithmetic units. The organization of the arithmetic units in a 
+            first array of multipliers and two arrays of adders is suitable for 
+            the treatment of radix-4 butterflies. Depending on the requirements 
+            and the possibility of a parallel access of the data and 
+            coefficients, each array may contain one or more arithmetic units. 
+            Input registers prevent multiple memory access for the same data 
+            word and intermediate registers and output registers create a data 
+            pipeline. The control part is usually very small and generates the 
+            control signals for the MUX, registers and arithmetic units.</P>
+            <P>The presented macroprogrammable architecture has been used for 
+            the implementation of a low-voltage (0.9-V) FFT processor for 
+            ultralow-power applications. The macroprogrammability offers a 
+            solution for more than 400 different FFT-based Wola filter bank 
+            configurations.</P>
+            <P>To improve processing quality and interface flexibility, some 
+            supplementary functional units have been introduced. A block 
+            floating-point unit improves the quantification noise and an input- 
+            and output-FIFO controller simplifies interfacing to 
+            analog-to-digital and digital to-analog converters. Four address 
+            generators are used in this application. The data path unit contains 
+            two MAC units and four adders. It can process complex operations 
+            like radix-2 and radix-4 butterflies.</P>
+            <P>The processor requires approximately 19,000 gate equivalents. It 
+            has been integrated on 0.35- and 0.18-micron technology. For the 
+            0.18-micron integration, depending on the Wola configuration, the 
+            power consumption is 60 microamps to 220 microamps at 1.2 V. A 
+            typical 16-complex-point Wola configuration as it is often used in 
+            hearing aids consumes about 110 microamps at only 1.2 V.</P>
+            <P>Because of the smart macroprogrammable approach, the size of the 
+            controller part and the address generators could be limited to 10.9 
+            percent and 6.9 percent, respectively, in comparison with the entire 
+            processor size without losing throughput and system flexibility.</P>
+            <P>The presented DSP architecture is an ideal solution for 
+            algorithms with well-organized data flow graphs. It is flexible 
+            because it is macroprogrammable and is as efficient as hardwired 
+            processors. Because the control units, address generators and data 
+            path unit of the presented DSP architecture work in parallel, no 
+            cycle is lost for control and address operations: the data path unit 
+            can work with its maximum throughput. The macrocode concept cuts the 
+            control and address generation overhead of the DSP system. This 
+            results in low power consumption and small size.</P>
+            <P>---</P>
+            <P>Also contributing to this article are Alexandre Heubi, Project 
+            Leader, and Peter Balsiger, Group Leader, of the Institute of 
+            Microtechnology at the University of Neuchatel.</P>
+            <P>http://www.eetimes.com/</P>
+            <P>Copyright ® 2000 CMP Media Inc.</P>
+</TBODY></TABLE></BODY></HTML>

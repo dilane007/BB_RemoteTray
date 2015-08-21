@@ -1,0 +1,91 @@
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1"> <title>Clearwater Networks - Simultaneous Multithreading (SMT) Core</title>
+</head>
+<body bgcolor="#ffffff">
+<center>
+<h3>Clearwater Networks CNP810SP<br>
+Simultaneous Multithreading (SMT) Core<br>
+</h3>
+<p>
+<img src="clearwater_files/spudetail3.gif">
+</p></center>
+<p>
+</p><h4>Overview</h4>
+The processing core of Clearwater's network processor, the CNP810SP, is shown above.
+This core incorporates Dynamic Multistreaming (DMS), or Simultaneous Multithreading (SMT)
+capabilities, whereby eight threads execute simultaneously, utilizing a variable number
+of resources on a cycle by cycle basis.  In each cycle anywhere from zero to three
+instructions can be executed from each of the threads depending on instruction dependencies
+and availability of resources.  The maximum instructions per cycle (IPC) of the entire core
+is ten.
+<p>
+In each cycle two threads are selected for fetch and their respective program counters (PCs)
+are supplied to the dual-ported instruction cache.  Each port supplies eight instructions,
+so there is a maximum fetch bandwidth of 16 instructions.  Each of the eight threads has
+its own instruction queue (IQ) which can hold up to 16 instructions.
+The two threads chosen for fetch in each cycle are the two that have the fewest number of
+instructions in their respective IQs.  Each of the eight threads has its own 31 entry
+register file (RF).  Since there is no sharing of registers between threads, the only
+communication between threads occurs through memory.
+</p><p>
+The eight threads are divided into two clusters of four for ease of implementation.
+Thus the dispatch logic is split into two groups where each group dispatches up to six
+instructions from four different threads.  Eight function units are grouped into two
+sets of four, each set dedicated to a single cluster.  There are also two ports to
+the data cache that are shared by both clusters.  A maximum of 10 instructions can be
+dispatched in each cycle.  The function units are fully bypassed so that dependent
+instructions can be dispatched in successive cycles.
+</p><p>
+</p><h4>For Futher Reading</h4>
+<ul>
+<li><a href="http://www.zytek.com/%7Emelvin/clearwater_patents/US06477562__.pdf">U.S. Patent 6,477,562</a>
+</li><li><a href="http://www.zytek.com/%7Emelvin/clearwater_patents/US06292888__.pdf">U.S. Patent 6,292,888</a>
+</li><li><a href="http://www.zytek.com/%7Emelvin/clearwater_patents/US06389449__.pdf">U.S. Patent 6,389,449</a>
+</li><li><a href="http://www.zytek.com/%7Emelvin/clearwater_patents/US21043610A1.pdf">U.S. Published Patent Application 2001/0043610</a>
+</li><li><a href="http://www.zytek.com/%7Emelvin/clearwater_patents/US21052053A1.pdf">U.S. Published Patent Application 2001/0052053</a>
+</li><li><a href="http://www.zytek.com/%7Emelvin/clearwater_patents/US22016883A1.pdf">U.S. Published Patent Application 2002/0016883</a>
+</li><li><a href="http://www.zytek.com/%7Emelvin/clearwater_patents/US22018486A1.pdf">U.S. Published Patent Application 2002/0018486</a>
+</li><li><a href="http://www.zytek.com/%7Emelvin/clearwater_patents/US22021707A1.pdf">U.S. Published Patent Application 2002/0021707</a>
+</li><li><a href="http://www.zytek.com/%7Emelvin/clearwater_patents/US22037011A1.pdf">U.S. Published Patent Application 2002/0037011</a>
+</li><li><a href="http://www.zytek.com/%7Emelvin/clearwater_patents/US22039368A1.pdf">U.S. Published Patent Application 2002/0039368</a>
+</li><li><a href="http://www.zytek.com/%7Emelvin/clearwater_patents/US22054603A1.pdf">U.S. Published Patent Application 2002/0054603</a>
+</li><li><a href="http://www.zytek.com/%7Emelvin/clearwater_patents/US22071393A1.pdf">U.S. Published Patent Application 2002/0071393</a>
+</li><li><a href="http://www.zytek.com/%7Emelvin/clearwater_patents/US22083173A1.pdf">U.S. Published Patent Application 2002/0083173</a>
+</li><li><a href="http://www.zytek.com/%7Emelvin/clearwater_patents/US23041168A1.pdf">U.S. Published Patent Application 2003/0041168</a>
+</li></ul>
+<p>
+</p><h4>Various Historical Multithreaded Machines and Research</h4>
+<ul>
+<li>1970: I/O Processor of the CDC 6600 (J. Thornton)
+</li><li>1981: Denelcor HEP-1 (B. Smith)
+</li><li>1984: Denelcor HEP-3 (aka Vulture) (S. Melvin, B. Smith 
+(unpublished, but acknowledged in: Thistle, M. and Smith, B. A Processor
+ Architecture for Horizon, 1988))
+</li><li>1988: Supercompting Research Center Horizon Project (J. Kuehn, B. Smith)
+</li><li>1990: Tera Computer System (R. Alverson, D. Callahan, D. Cummings, B. Koblenz, A. Porterfield, B. Smith)
+</li><li>1991: <a href="http://www.zytek.com/%7Emelvin/melvin_dissertation.pdf">Multiple Instruction Stream Processors (Section 7.2.1), pp. 126 - 128 (Ph.D. Dissertation, S. Melvin)</a>
+</li><li>1994: <a href="http://www.zytek.com/%7Emelvin/serrano_phd.pdf">Performance Tradeoffs in Multistreamed Superscalar Architectures (Ph.D. Dissertation, M. Serrano)</a>
+</li><li>1994: Multistreamed Superscalar Processors (W. Yamamoto, M. Nemirovsky)
+</li><li>1995: Simultaneous Multithreading (D. Tullsen, S. Eggers, H. Levy)
+</li><li>1999: Compaq Alpha EV-8 (21464) (J. Emer)
+</li><li>2001: <a href="http://www.zytek.com/%7Emelvin/Clearwater_NetworkProcessorForum_2001.pdf">Clearwater (XStream Logic) CNP810SP</a>
+</li><li>2001: Sun SMT Processor
+</li><li>2001: Intel Hyperthreading
+</li><li>2003: <a href="http://www.zytek.com/%7Emelvin/flowstorm.html">Massive Multithreading</a> (S. Melvin, M. Nemirovsky, E. Musoll, J. Huynh, R. Milito, H. Urdaneta, K. Saraf)
+</li></ul>
+<p>
+</p><h4>Clearwater Networks</h4>
+XStream Logic, Inc. was founded in 1998 by Mario Nemirovsky, Adolfo Nemirovsky, Narendra Sankar and
+Ron Barr.  The company was established to develop a network processor utilizing multithreading
+technology.  XStream Logic closed series A financing in 1999 and in late 2000 a series B financing
+round was closed.  The company changed its name to Clearwater Networks in early 2001.
+In April of 2002, after a series of downsizings, the board resolved to
+dissolve the company.  Alas, the company never taped out the CNP810SP.
+<p>
+</p><h4>About the Author</h4>
+From March 2000 through April 2001, <a href="http://www.zytek.com/%7Emelvin">Stephen Melvin, Ph.D.</a>
+was a Senior Architect at Clearwater Networks (formerly XStream Logic, Inc.).  Dr. Melvin was responsible
+for the architecture and microarchitecture of the processing core.
+<p>
+
+</p></body></html>
