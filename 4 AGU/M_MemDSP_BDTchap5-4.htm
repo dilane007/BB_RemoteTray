@@ -1,0 +1,641 @@
+<html>
+<!-- @(#)chap5-4.htm	1.7 8/31/98 -->
+<head>
+<title>BGTDP: Chap. 5</title>
+</head>
+
+<body bgcolor=FFFFFF>
+
+<A NAME="top">
+
+<A HREF="../Welcome.html"><IMG SRC="../gifs/button.horizontal.home.gif" alt="[GOTO BDTI HOME]" BORDER=0></A><A HREF="bgtdp.htm#bgtdp_links"><IMG SRC="../gifs/button.horizontal.buyers.guide.2.gif" alt="[GOTO BUYER'S GUIDE TO DSP PROCESSORS]" BORDER=0></A><IMG SRC="../gifs/button.horizontal.sample.excerpts.gif" alt="(VIEWING SAMPLE EXCERPT)" BORDER=0>
+
+<hr><br>
+
+Copyright &copy 1997 Berkeley Design Technology, Inc.<br>
+The following excerpt is from the third (1997) edition of <i>Buyer's Guide to DSP Processors</i>.
+<p>
+
+<h2>5.4	 Memory Architecture</h2>
+
+<dl><b><font size="+1">Contents</font></b><br>
+<li><a href="#Memory Bandwidth">Memory Bandwidth</a>
+<li><a href="#Memory Structures">Memory Structures</a>
+<ol>
+<li><a href="#Von Neumann Architectures">Von Neumann Architectures</a>
+<li><a href="#Harvard Architectures">Harvard Architectures</a>
+<li><a href="#Multiple-Access Memories">Multiple-Access Memories</a>
+<li><a href="#Specialized Memory Write Operations">Specialized Memory Write Operations</a>
+</ol>
+<li><a href="#Features for Reducing Memory Access Requirements">Features for Reducing Memory Access Requirements</a>
+<ol>
+<li><a href="#Algorithmic Approaches">Algorithmic Approaches</a>
+<li><a href="#Program Caches">Program Caches</a>
+<li><a href="#Modulo Addressing">Modulo Addressing</a>
+</ol>
+<li><a href="#ROM">ROM</a>
+<li><a href="#External Memory Interfaces">External Memory Interfaces</a>
+<ol>
+<li><a href="#Wait States">Wait States</a>
+<li><a href="#Multiprocessor Support in External Memory Interfaces">Multiprocessor Support in External Memory Interfaces</a>
+<li><a href="#Dynamic Memory">Dynamic Memory</a>
+<li><a href="#Direct Memory Access">Direct Memory Access</a>
+</ol>
+<li><a href="#Customization">Customization</a>
+</dl>
+
+<a name="164160"> As we explored in the previous section, DSP
+processor data paths are optimized to provide extremely high
+performance on certain kinds of arithmetic-intensive
+algorithms. Because of the numeric, computation-intensive nature of
+DSP applications, data paths typically get the most attention when
+designing or evaluating a processor for DSP. However, a powerful data
+path is only part of a high-performance processor. To keep the data
+path fed with data and to store the results of data path operations,
+processors require the ability to move large amounts of data to and
+from memory quickly. Thus, the organization of memory and its
+interconnection with the processor are critical factors in determining
+processor performance. We call these characteristics the memory
+architecture of a processor.<p> </a>
+
+<a name="166334">
+In this section we explore some of the facets of memory architectures that are most important for DSP applications. Section 5.5, Addressing covers addressing modes, which are the means by which the programmer specifies accesses to memory.<p>
+</a>
+<a name="1051">
+<a name="Memory Bandwidth">
+<h3> Memory Bandwidth</h3>
+</a>
+<a name="166342">
+DSP applications consume, process, and produce vast amounts of data. In many cases, DSP applications are less concerned with storing large amounts of data, and more concerned with moving it into the processor in fairly small blocks, processing it, and moving the resulting output back out of the processor as quickly as possible.<p>
+</a>
+<a name="166343">
+To understand the need for large memory bandwidth in DSP applications, consider the example of a finite impulse response (FIR) filter, shown in <a href="chap5-4.htm#Figure 5.4-1">Figure 5.4-1</a>. Although this example has become somewhat overused in DSP processor circles, it is perhaps the simplest example that clearly illustrates memory access issues for DSP applications.<p>
+</a>
+
+<a name="1494"> The mechanics of the basic FIR filter algorithm are
+straightforward. The blocks labeled D in <a href="chap5-4.htm#Figure 5.4-1">
+Figure 5.4-1</a> are unit delay operators; their output is a
+copy of the input sample delayed by one sample period. A series of
+storage elements (usually memory locations) are used to simulate a
+series of these delay elements (called a delay line). The FIR filter
+is constructed from a series of taps. Each tap includes a
+multiplication and an accumulation operation. At any given time, N-1
+of the most recent input samples reside in the delay line, where N is
+the number of taps in the filter. Input samples are designated xk; the
+first input sample is x1, the next is x2, and so on. Each time a new
+input sample arrives, the previously stored samples are shifted one
+place to the right along the delay line, and a new output sample is
+computed by multiplying the newly arrived sample and each of the
+previously stored input samples by the corresponding coefficient. In
+the figure, coefficients are represented as cn, where n is the
+coefficient number. The results of each multiplication are summed
+together to form the new output sample, yk.<p> </a>
+
+<a name="Figure 5.4-1">
+<Center>
+<img border=1 src="old/ch5fig1.gif" width=538 height=304><br>
+<p>
+<b>FIGURE 5.4-1. Finite-impulse response (FIR) filter.</b>
+</center>
+<p>
+
+<a name="1077"> As we discussed in Section 5.3, Data Path, the
+multiply-accumulate (``MAC'') operation that is at the heart of the
+FIR filter algorithm is also central to many other important DSP
+algorithms. Thus, data paths strive for high performance on these MAC
+operations. To sustain a throughput of one FIR filter tap per
+instruction cycle (the hallmark of DSP processor performance), a
+processor must complete one MAC and make several accesses to memory
+within one instruction cycle. This means that the arithmetic
+operations required for one tap can be computed in one instruction
+cycle. Therefore, a new output sample can be produced every n
+instruction cycles for an n-tap FIR filter. However, to achieve this
+performance, the processor must be able to make several accesses to
+memory within one instruction cycle. Specifically, in the
+straightforward case, the processor must:<p> </a>
+
+<ul>
+<a name="1110">
+<li>fetch the multiply-accumulate instruction,
+</a>
+<a name="1113">
+<li>read the appropriate data value from the delay line,
+</a>
+<a name="1116">
+<li>read the appropriate coefficient value, and
+</a>
+<a name="1117">
+<li>write the data value to the next location in the delay line to shift data through the delay line.
+</a>
+</ul>
+<a name="164360">
+Thus, the processor must make four accesses to memory in one instruction cycle if the multiply-accumulate operation is to execute in a single instruction cycle. In practice, some processors use other techniques (discussed later) to reduce the actual number of memory accesses needed to three or even two. Nevertheless, all processors require multiple memory accesses within one instruction cycle to compute an FIR filter at a rate of one tap per instruction cycle. This level of memory bandwidth is also needed for other important DSP algorithms besides the FIR filter. Note that for clarity of explanation, in this section we ignore issues of pipelining. Pipelining is explored in detail in Section 5.8.<p>
+</a>
+<a name="166352">
+<a name="Memory Structures">
+<h3> Memory Structures</h3>
+</a>
+<a name="166354">
+Processor designers and system designers have many options for organizing memory and for connecting it to the processor. These options are especially important in the light of the voracious data appetite of DSP applications. Below we examine some of the variations used in organizing memory and interfacing memory to processors.<p>
+</a>
+<a name="166388">
+<a name="Von Neumann Architectures">
+<h4> Von Neumann Architectures</h4>
+</a>
+<a name="166387">
+The simplest processor memory structure is a single bank of memory, which the processor accesses through a single set of address and data lines, as shown in <a href="chap5-4.htm#Figure 5.4-2">Figure 5.4-2</a>. This structure, which is common among non-DSP processors, is often called a Von Neumann architecture. Both program instructions and data are stored in the single memory. In the simplest (and most common) case, the processor can make one access (either a read or a write) to memory during each instruction cycle.<p>
+</a>
+
+<a name="Figure 5.4-2">
+<center>
+<img border=1 src="old/ch5fig2.gif" width=235 height=230><br>
+<p>
+<b>FIGURE 5.4-2. Simple memory structure. This is the so-called "Von Neumann"<br>architecture, common among many kinds of non-DSP processors</b>
+</center>
+<p>
+
+If we consider programming a simple Von Neumann architecture machine
+to implement our example FIR filter algorithm, the shortcomings of the
+architecture become immediately apparent. Even if the processor's data
+path is capable of completing a multiply-accumulate operation in one
+instruction cycle, it will take four instruction cycles for the
+processor to actually perform the multiply-accumulate operation, since
+the two to four memory accesses outlined earlier must proceed
+sequentially, with each memory access taking one instruction
+cycle. This is one reason why conventional processors often do not
+perform well on DSP-intensive applications, and why designers of DSP
+processors have developed a wide range of alternatives to the Von
+Neumann architecture, which we explore below. Each of these
+alternatives offers improved memory access bandwidth when compared to
+the basic Von Neumann architecture. Different processors use very
+different techniques to achieve this increased bandwidth, and in many
+cases (mostly in smaller, fixed-point devices) processors place severe
+restrictions on how this added bandwidth can be used. Such
+restrictions often contribute significantly to the difficulty of
+developing high-performance software for DSP processors.<p> </a>
+
+<a name="1174">
+<a name="Harvard Architectures">
+<h4> Harvard Architectures</h4>
+</a>
+<a name="166393">
+The name Harvard architecture refers to a memory structure wherein the processor is connected to two independent memory banks via two independent sets of buses. In the original Harvard architecture, one memory bank holds program instructions, and the other holds data. Commonly, this concept is extended slightly to allow one bank to hold program instructions and data, while the other bank holds data only. This ``modified'' Harvard architecture is shown in <a href="chap5-4.htm#Figure 5.4-3">Figure 5.4-3</a>.<p>
+</a>
+<a name="166439">
+The key advantage of the Harvard architecture is that two memory accesses can be made during any one instruction cycle. Thus, the two to four memory accesses required for our example FIR filter can be completed in one or two instruction cycles rather than two to four as required with a Von Neumann architecture.<p>
+</a>
+<a name="167074">
+This type of memory architecture is used in many DSP processor families, including the Analog Devices ADSP-21xx (see Figure 7.1-1 in Section 7.1) and the Lucent Technologies DSP16xx (see Figure 7.4-1 in Section 7.4), although on the DSP16xx writes to memory always take two instruction cycles, so the full potential of the dual-bank structure is not realized.<p>
+</a>
+
+<a name="Figure 5.4-3">
+<center>
+<img border=1 src="old/ch5fig3.gif" width=236 height=287><br>
+<p>
+<b>FIGURE 5.4-3. A Harvard architecture. The processor core can simultaneously <br>access the two memory banks using two independent sets of buses.</b>
+</center>
+<p>
+
+If two memory banks are better than one, then one might suspect that three memory banks would be better still. Indeed, this is the approach adopted by several DSP processor manufacturers. The modified Harvard architectures of the PineDSPCore and OakDSPCore from DSP Group provide three memory banks, each with its own set of buses: a program memory bank and two data memory banks, designated X and Y. These three memories allow the processor to make three independent memory accesses per instruction cycle: one program instruction fetch, one X memory data access, and one Y memory data read. Other processors based on a three-bank modified Harvard architecture include the Motorola DSP560xx and DSP563xx.<p>
+</a>
+<a name="166463">
+For our FIR filter example, recall that we nominally need four memory accesses per instruction cycle in order to compute one filter tap per instruction cycle. Many processors that support only three memory accesses per instruction cycle dispense with the need for a fourth memory access to update the filter delay line by using a technique called modulo addressing, which is discussed below under <I>Features for Reducing Memory Access Requirements</I>.<p>
+</a>
+<a name="205043">
+Because extending multiple memory buses outside the chip is costly, DSP processors generally provide only a single off-chip bus set (i.e., one address and one data bus). Processors with multiple memory banks usually provide a small amount of memory on-chip for each bank. Although the memory banks can usually be extended off-chip, multiple off-chip memory accesses cannot proceed in parallel (due to the lack of a second set of external memory buses). Therefore, if multiple accesses to off-chip memory are requested by an instruction, the instruction execution is extended to allow time for the multiple external accesses to proceed sequentially. Issues relating to external memory are discussed later in this section.<p>
+</a>
+<a name="977">
+<a name="Multiple-Access Memories">
+<h4> Multiple-Access Memories</h4>
+</a>
+<a name="1328">
+As we have just discussed, Harvard architectures achieve multiple memory accesses per instruction cycle by using multiple, independent memory banks connected to the processor data path via independent buses. While a number of DSP processors use this approach, there are also other ways to achieve multiple memory accesses per instruction cycle. These include using fast memories that support multiple, sequential accesses per instruction cycle over a single set of buses, and using multi-ported memories that allow multiple concurrent memory accesses over two or more independent sets of buses.<p>
+</a>
+
+<a name="1061"> Some processors use on-chip memories that can complete
+an access in one-half of an instruction cycle. This means that two
+independent accesses to a single memory can be completed in
+sequence. Fast memories can be combined with a Harvard architecture,
+yielding better performance than could be obtained from either
+technique alone. For example, consider a modified Harvard architecture
+with two banks of fast memory. Each bank can complete two sequential
+memory accesses per instruction cycle. The two banks together can
+complete four memory accesses per instruction cycle, assuming the
+memory accesses are arranged so that each memory bank handles two
+accesses. In general, if the memory accesses cannot be divided in this
+way so that, for example, three accesses are made to one bank, the
+processor automatically lengthens the execution of the instruction to
+allow time for three sequential memory accesses to complete. Thus,
+there is no risk that a sub-optimal arrangement of memory accesses
+will cause erroneous results; it simply causes the program to run more
+slowly. <p> </a>
+
+<a name="1546">
+The Zoran ZR38xxx combines a modified Harvard architecture with multiple-access memory. This processor combines a single-access program memory bank with a dual-access data memory bank. Thus, one program fetch and two data accesses to on-chip memory can be completed per instruction cycle. The Lucent Technologies DSP32xx combines a Von Neumann architecture with multiple access memories. This processor can complete four sequential accesses to its on-chip memory in a single instruction cycle.<p>
+</a>
+<a name="957">
+Another technique for increasing memory access capacity is the use of multi-ported memories. A multi-ported memory has multiple independent sets of address and data connections, allowing multiple independent memory accesses to proceed in parallel. The most common type of multi-ported memory is the <I>dual-ported</I> variety, which provides two simultaneous accesses. However, triple- and even quadruple-ported varieties are sometimes used. Multi-ported memories dispense with the need to arrange data among multiple, independent memory banks to achieve maximum performance. The key disadvantage of multi-ported memories is that they are much more costly (in terms of chip area) to implement than standard, single-ported memories.<p>
+</a>
+<a name="1006">
+Some DSP processors combine a modified Harvard architecture with the use of multi-ported memories. The memory architecture shown in <a href="chap5-4.htm#Figure 5.4-4">Figure 5.4-4</a>, for example, includes a single-ported program memory with a <I>dual-ported</I> data memory. This arrangement provides one program memory access and two data memory accesses per instruction word.<p>
+</a>
+
+<a name="Figure 5.4-4">
+<center>
+<img border=1 src="old/ch5fig4.gif" width=285 height=346><br>
+<p>
+<b>FIGURE 5.4-4. A Harvard architecture with a dual-ported data memory (A) and <br>a single-ported program memory (B). The processor core can simultaneously <br>perform two access to memory bank A and one access to memory bank B using <br> three independent sets of buses.
+</b>
+</center>
+<p> 
+
+<a name="1346">
+For the most part, the use of fast memories with multiple sequential accesses within an instruction cycle and multi-ported memories with multiple parallel accesses is limited to what can be squeezed onto a single integrated circuit with the processor core because of limitations on chip input/output performance and capacity. In the case of fast memories, moving the memory (or part of it) off-chip means that significant additional delays are introduced between the processor core and the memory. Unless the processor instruction rate is relatively slow, these delays may make it impractical to obtain two or more sequential memory accesses per instruction cycle. In the case of multi-ported memories, moving all or part of the memory off-chip means that multiple address and data buses must be brought outside the chip. This implies that the chip will need many more I/O pins, which often means that a larger, more expensive package and possibly also a larger die size must be used.<p>
+</a>
+<a name="1377">
+<a name="Specialized Memory Write Operations">
+<h4> Specialized Memory Write Operations</h4>
+</a>
+<a name="1348">
+A few processors provide a specialized mechanism to allow a write to data memory to proceed in parallel with an instruction read and a data read. These processors provide special instructions that allow a parallel write to data memory under certain restricted circumstances. This write operation can be used to shift data along the delay line in an FIR filter implementation. For example, the Lucent Technologies DSP16xx normally cannot provide both a data memory write and a data memory read in less than three instruction cycles. However, under certain circumstances, an operand register value can be written to one memory location and then loaded with a value from another memory location (essentially a specialized swap operation) in only two instruction cycles. Texas Instruments' fixed-point DSPs provide a similar kind of operation: a value in memory can be loaded into the operand register and also copied to the next higher location in memory in a single instruction cycle.<p>
+</a>
+<a name="1186">
+<a name="Features for Reducing Memory Access Requirements">
+<h3> Features for Reducing Memory Access Requirements</h3>
+</a>
+<a name="161357">
+Some DSP processors provide special features designed to reduce the number of memory accesses required to perform certain kinds of operations. Under some circumstances these features allow such processors to achieve equal performance to other processors that provide more memory bandwidth. Because a processor with more memory bandwidth is generally more expensive, features that reduce memory access requirements also tend to reduce processor cost. Of course, they may also increase execution time or software development time, and therefore represent a trade-off that must be carefully considered by the system designer.<p>
+</a>
+<a name="166476">
+<a name="Algorithmic Approaches">
+<h4> Algorithmic Approaches</h4>
+</a>
+
+<a name="166529"> Although not a DSP processor feature, one technique
+for reducing memory access requirements is to use algorithms that
+exploit data locality to reduce the number of memory accesses
+needed. DSP algorithms that operate on blocks of input data often
+fetch the same data from memory multiple times during execution. A
+clever programmer can reuse previously fetched data to reduce the
+number of memory accesses required by an algorithm. For example, <a
+href="chap5-4.htm#Figure 5.4-5">Figure 5.4-5</a> illustrates an FIR
+filter operating on a block of two input samples. Instead of computing
+output samples one at a time, the filter instead computes two output
+samples at a time, allowing it to reuse previously fetched data. This
+reduces the memory bandwidth required from one instruction fetch and
+two data fetches per instruction cycle to one instruction fetch and
+one data fetch per instruction cycle. At the expense of slightly
+larger code size, this technique allows (for example) FIR filter
+outputs to be computed at one instruction cycle per tap while
+requiring less memory bandwidth than a more straightforward
+approach. This technique is heavily used on IBM's Mwave family of DSP
+processors, which have limited bandwidth. Within IBM the technique is
+known as the ``Zurich Zip,'' in honor of the researcher at IBM Zurich
+Laboratories who popularized it. Note, however, that some applications
+(such as modem timing recovery) involve feedback loops wherein the Nth
+input sample may depend on the N-1st output sample. In such cases,
+algorithms that process pairs of samples cannot be used.<p> </a>
+
+<a name="Figure 5.4-5">
+<center>
+<img border=1 src="old/ch5fig5.gif" width=528 height=384><br>
+<p>
+<b>FIGURE 5.4-5. Illustration of an algorithmic approach to reducing memory access<br> requirements using a block FIR filter with a block size of two samples and four<br> taps. (a) FIR filter equations, (b) memory layout, (c) pseudo-code implementing<br> the filter in essentially one instruction cycle per tap while requiring only one<br> data memory access per instruction cycle.</b>
+</center>
+<p>
+
+<a name="1108">
+<a name="Program Caches">
+<h4> Program Caches</h4>
+</a>
+<a name="1189">
+Some DSP processors incorporate a <I>program cache</I>, which is a small memory within the processor core that is used for storing program instructions to eliminate the need to access program memory when fetching certain instructions. Avoiding a program instruction fetch can free a memory access to be used for a data read or write, or it can speed operation by avoiding delays associated with slow external (off-chip) program memory.<p>
+</a>
+<a name="1196">
+DSP processor caches vary significantly in their operation and capacity. They are generally much smaller and simpler than the caches associated with general-purpose processors. We briefly discuss each of the major types of DSP processor caches below.<p>
+</a>
+
+<a name="1344"> The simplest type of DSP processor cache is a
+single-instruction <I>repeat buffer</I>. This is a one-word
+instruction cache that is used with a special repeat instruction. A
+single instruction that is to be executed multiple times is loaded
+into the buffer upon its first execution; immediately subsequent
+executions of the same instruction fetch the instruction from the
+cache, freeing the program bus to be used for a data read or write
+access. For example, the Texas Instruments TMS320C2x, TMS320C2xx, and
+TMS320C5x families provide one program memory access and one data
+memory access per instruction cycle. However, when an instruction is
+placed in the repeat buffer for repeated execution, the second and
+subsequent executions of the instruction can perform two memory
+accesses (one to program memory to fetch one data value and one to
+data memory to fetch another data value). Thus, when the repeat
+instruction is used, the processor can achieve performance comparable
+to a processor that provides three memory accesses per instruction
+cycle. The obvious disadvantage to the repeat buffer approach is that
+it works only on one instruction at a time, and that instruction must
+be executed repeatedly. While this is very useful for some algorithms
+(e.g., dot-product computation), it does not help for algorithms in
+which a block of multiple instructions must be executed repeatedly as
+a group. In some cases, another disadvantage to the single-instruction
+repeat buffer is that many processors disable interrupts during the
+repeated execution of the instruction.<p> </a>
+
+<a name="1194"> The repeat buffer concept can be extended to
+accommodate more than one program instruction. For example, the Lucent
+Technologies DSP16xx provides a 16-entry repeat buffer. The DSP16xx
+buffer is loaded when the programmer specifies a block of code of 16
+or fewer words to be repeated using the repeat instruction. The first
+time through, the block of instructions are read from program memory
+and copied to the buffer as they are executed. During each repetition,
+the instructions are read from the buffer, freeing one additional
+memory access for a data read or write. As with the TMS320C2x and
+TMS320C5x, the DSP16xx can achieve two data transfers per instruction
+cycle when the repeat buffer is used. Multi-word repeat buffers work
+well for algorithms that contain loops consisting of a modest number
+of instructions. This type of loop is quite common in DSP algorithms,
+since many (if not most) DSP algorithms contain groups of several
+instructions that are executed repeatedly. Such loops are often used
+in filtering, transforms, and block data moves.<p> </a>
+
+<a name="1349"> A generalization of the multi-instruction repeat
+buffer is a simple <I>single-sector instruction cache</I>. This is a
+cache that stores some number of the most recent instructions that
+have been executed. If the program flow of control jumps back to an
+instruction that is in cache (a <I>cache hit</I>), the instruction is
+executed from the cache instead of being loaded from program
+memory. This frees an additional memory access for a data transfer,
+and avoids a speed penalty that may be associated with accessing slow
+off-chip program memory. The limitation on this type of cache is that
+it can be used only to access a single, contiguous region of program
+memory. When a program control flow change (for example, a branch
+instruction or an interrupt service routine) accesses a program memory
+location that is not already contained in the cache, the previous
+contents of the cache are invalidated and cannot be used.<p> </a>
+
+<a name="1351">
+The difference between the single-sector instruction cache and the multi-word repeat buffer is that the cache is loaded with each instruction as it is executed and tracks the addresses of the instructions in the cache. If the program flow of control jumps to a program address that is contained in the cache, the processor detects this and accesses the instructions out of the cache. This means that the cache can be accessed by a variety of instructions, such as <I>jump, return,</I> etc. With the repeat buffer, only the repeat instruction can be used to access instructions in the cache. This means that a repeat buffer cannot be used to hold branch instructions. An example of a processor using a single-sector cache is the Zoran ZR38xxx. As with multi-word repeat buffers, single-sector caches are useful for a wide range of DSP processor operations that involve repetitively executing small groups of instructions.<p>
+</a>
+
+<a name="1164"> A more flexible structure is a cache with multiple
+independent sectors. This type of cache functions like the simple
+single-sector instruction cache, except that two or more independent
+segments of program memory can be stored. For example, the cache in
+the Texas Instruments TMS320C3x contains two sectors of 32 words
+each. Each sector can be used to store instructions from an
+independent 32-word region of program memory. If the processor
+attempts to fetch an instruction from an external memory location that
+is stored in the cache (a <I>cache hit</I>), the external access is
+not made, and the word is taken from the cache. If the memory location
+is not in the cache (a <I>cache miss</I>), then the instruction is
+fetched from external memory, and the cache is updated in one of two
+ways. If the external address was from one of the two 32-word sectors
+currently associated with the cache, then the word is stored in the
+cache at the appropriate location within that sector. If the external
+address does not fall within the two 32-word sectors currently being
+monitored by the cache, then a sector miss occurs. In this case, the
+entire contents of one of the sectors are discarded and that sector
+becomes associated with the 32-word region of memory containing the
+accessed address. In the case of Texas Instruments processors, the
+algorithm used to determine which cache sector should be discarded
+when a sector miss occurs is the <I>least-recently-used</I> (or LRU)
+algorithm. This algorithm keeps track of when each cache sector has
+been accessed. When a cache sector is needed to load new program
+memory locations, the algorithm selects the cache sector that has not
+been read from for the longest time.<p> </a>
+
+<a name="1353">
+Some DSP processors with instruction caches provide special instructions or configuration bits that allow the programmer to lock the contents of the cache at some point during program execution or to disable the cache altogether. These features provide a measure of manual control over cache mechanisms, which may allow the programmer to obtain better performance than would be achieved with the built-in cache management logic of the processor. In addition, imposing manual control over cache loading may help software developers to ensure that their code will meet critical real-time constraints.<p>
+</a>
+<a name="1345">
+An interesting approach to caches was introduced by Motorola with the updated DSP96002. This processor allows the internal 1 Kword by 32-bit program memory to be configured either as an instruction cache or as program memory. When the cache is enabled, it is organized into eight 128-word sectors. Each sector can be individually locked and unlocked. Motorola's DSP563xx family includes a similar dual cache/memory construct.<p>
+</a>
+<a name="166856">
+A variation on the multi-sector caches just discussed is the Analog Devices ADSP-210xx cache. The ADSP-210xx uses a two-bank Harvard architecture; instructions that access data from program memory require two accesses and therefore cause contention for program memory. The ADSP-210xx cache is only loaded with those instructions whose execution cause such contention for program memory access. This makes the cache more efficient (in terms of cache size) than a traditional cache, which stores every instruction fetched.<p>
+</a>
+<a name="166858">
+Although DSP processor caches are in some cases beginning to approach the sophistication of caches found in high-performance general-purpose processors, there are still some important differences. In particular, DSP processor caches are only used for program instructions, not for data. A cache that accommodates data as well as instructions must include a mechanism for updating both the cache and external memory when a data value held in the cache is modified by the program. This adds significantly to the complexity of the cache hardware.<p>
+</a>
+<a name="166865">
+Whether or not a processor contains a cache, it is often possible for software developers to improve performance by explicitly copying sections of program code from slower or more congested (in terms of accesses) memory to faster or less congested memory. For example, if a section of often-used program code is stored in a slow, off-chip ROM, then it may make sense to copy that code to faster on-chip RAM, either at system start-up or when that particular program section is needed.<p>
+</a>
+<a name="1358">
+<a name="Modulo Addressing">
+<h4> Modulo Addressing</h4>
+</a>
+
+<a name="1198"> As we have just discussed, cache memories reduce the
+number of accesses to a processor's main memory banks required to
+accomplish certain operations. They do this by acting as an
+additional, specialized memory bank. In special circumstances, it is
+possible to use other techniques to reduce the number of total memory
+accesses (including use of a cache, if one exists) required to
+accomplish certain operations. One such technique is <I>modulo
+addressing</I>, which is discussed in detail in Section 5.5,
+<I>Addressing</I>. Modulo addressing enables a processor to implement
+a delay line, such as the one used in our FIR filter example, without
+actually having to move the data values in memory. Instead, data
+values are written to one memory location and remain there until they
+are no longer needed. The effect of data shifting along a delay line
+is simulated by manipulating memory pointers using modulo
+arithmetic. This technique reduces the number of simultaneous memory
+accesses required to implement the FIR filter example from four per
+tap to three per tap. The buffer that is addressed using modulo
+addressing is often referred to as a <I>circular buffer</I>.<p> </a>
+
+<a name="166601">
+Hardware support for modulo addressing is practically universal among DSP processors, although with varying support. For example, the Texas Instruments TMS320C54x allows only a single circular buffer to be active at a time, while the Analog Devices ADSP-2106x and the Zoran ZR38xxx allow up to eight circular buffers to be active at a time. In processors without hardware support for modulo addressing, a variety of software techniques can often be used to achieve the same effect, typically at the cost of slightly more complex code and a small reduction in performance.<p>
+</a>
+<a name="1354">
+<a name="ROM">
+<h3> ROM</h3>
+</a>
+<a name="1365">
+DSP processors that are intended for low-cost, embedded applications like consumer electronics and telecommunications equipment provide on-chip read-only memory (ROM) to store the application program and constant data.<p>
+</a>
+<a name="167428">
+ROM comes in many varieties. It may be mask-programmed (i.e., programmed during fabrication of the chip), one-time programmable by the system designer (PROM), or erasable and reprogrammable multiple times by the system designer. Erasable ROMs rely either on ultraviolet light for erasing their contents (EPROM) or on electrical signals (EEPROM). Recently some processor vendors have begun to incorporate <I>flash EEPROM</I> into their devices. Flash EEPROM is electrically erasable and, unlike other kinds of electrically erasable ROM, does not require special voltages for reprogramming. Thus, flash EEPROM permits straightforward reprogramming after deployment of a manufactured system. Processors with flash EEPROM include the Texas Instruments TMS320F206 and TMS320F240. Unless otherwise noted, in this report the term ``ROM'' refers to mask-programmed ROM.<p>
+</a>
+<a name="166626">
+Some manufacturers offer multiple versions of their processors: a version with internal program RAM for prototyping and for low-volume production, and a version with factory-programmed ROM for large-volume production. On-chip ROM sizes typically range from 256 words to 36 Kwords. Note also that ROM cells are smaller than RAM cells, allowing more ROM than RAM to fit in the same silicon area. Internal ROM is an advantage in terms of system cost, size, and power consumption; electromagnetic interference is also reduced.<p>
+</a>
+<a name="166730">
+Masked ROM, as opposed to EPROM or flash EEPROM, requires significant minimum quantity orders of parts (10,000 is typical), and is also brings technical and financial risk: once programmed, the code cannot be changed, and if not all the processors are sold, there will be excess inventory since the processors cannot generally be used for other purposes. Thus, if a last-minute bug is discovered, designers can be left with thousands of bug-ridden ROM chips. Since fabricating corrected chips can take months and involve significant cost, some ROM memory DSP processors feature ROM patching, a technique that allows the designer to correct bugs in ROM code via software in RAM.<p>
+</a>
+
+<a name="166732"> DSP processors that feature ROM patching dedicate a
+set of programmable registers, the ROM patch address registers, to
+hold the starting addresses of groups of incorrect instructions. The
+programmer loads these registers from external memory during bootstrap
+loading. Each time the processor fetches a ROM instruction, it
+compares the address of the instruction with the addresses stored in
+the ROM patch address registers. If the addresses match, the processor
+program counter automatically jumps from the ROM code to a portion of
+RAM memory that contains one or more replacement instructions. The
+last replacement instruction contains a jump back into the appropriate
+place in the ROM code. The Motorola DSP566xx family of processors
+allows up to four such ROM code patches. If the fetch order of the
+incorrect instructions is known, more than four code patches may be
+enabled by using the replacement code to reprogram the ROM patch
+instruction registers. For example, some instructions in the
+replacement code for the first encountered bug can reprogram the first
+ROM patch address register to the address of another incorrect
+instruction block that will be fetched later.<p> </a>
+
+<a name="166753">
+For applications requiring more ROM than is provided on-chip by the chosen processor, external ROM can be connected to the processor through its external memory interface. Typically, multiple ROM chips are used to create a bank of memory whose width matches the width of the program word of the processor. However, some processors have the ability to read their initial (boot) program from an inexpensive byte-wide external ROM. These processors construct instruction words of the appropriate width by concatenating bytes from the ROM.<p>
+</a>
+<a name="166755">
+<a name="External Memory Interfaces">
+<h3> External Memory Interfaces</h3>
+</a>
+<a name="166834">
+DSP processors' external memory interfaces differ in three main features: number of memory ports, sophistication and flexibility of the interface, and timing requirements.<p>
+</a>
+<a name="166842">
+Although many DSP processors use Harvard architectures on-chip to boost memory bandwidth, limitations on package pin counts dictate that off-chip memory interfaces be limited to a single port in most cases. Most processors with multiple on-chip memory banks provide the flexibility to use the external memory port to extend any of the internal memory banks off-chip. However, the lack of multiple external memory ports usually means that multiple accesses cannot be made to external memory locations within a single instruction cycle, and programs attempting to do so will incur a performance penalty. <a href="chap5-4.htm#Figure 5.4-6">Figure 5.4-6</a> illustrates a typical DSP processor external memory interface, with three independent sets of on-chip memory buses sharing one external memory interface.<p>
+</a>
+
+<a name="Figure 5.4-6">
+<center>
+<img border=1 src="old/ch5fig6.gif" width=413 height=478><br>
+<p>
+<b>FIGURE 5.4-6. Example DSP processor external memory interface. The processor <br>has three sets of on-chip buses, but only one set of off-chip memory<br> buses. The on-chip buses are multiplexed such that any one of the on-chip bus sets<br> can be connected to the off-chip bus set.</b>
+</center>
+<p>
+
+<a name="166648">
+Some DSP processors do provide multiple off-chip memory ports. The Analog Devices ADSP-21020 provides an external program memory port (24-bit address, 48-bit data) and an external data memory port (32-bit address, 32-bit data). The Texas Instruments TMS320C30 provides one 24-bit address, 32-bit data external memory port, and one 13-bit address, 32-bit data external memory port, while the TMS320C40 has two identical 31-bit address, 32-bit data external memory ports. Similarly, the Motorola DSP96002 provides two identical 32-bit address and data bus sets. The cost of these devices is correspondingly higher than that of comparable processors with only one external memory port.<p>
+</a>
+<a name="166870">
+Multiple external memory interfaces are typically found on floating-point processors, which are often used in applications with large program and data memory requirements. Having two external memory interfaces, for example, often allows a processor to execute at full speed while making two external memory accesses per instruction cycle.<p>
+</a>
+<a name="1379">
+DSP processor external memory interfaces vary quite a bit in flexibility and sophistication. Some are relatively simple and straightforward, with only a handful of control pins. Others are much more complex, providing the flexibility to interface with a wider range of external memory devices and buses without special interfacing hardware. Some of the features distinguishing external memory interfaces are the flexibility and granularity of programmable wait states, the inclusion of a wait pin to signal the availability of external memory, bus request and bus grant pins (discussed below), and support for page-mode DRAM (discussed below).<p>
+</a>
+<a name="1341">
+Often, on-chip memories occupy portions of distinct address spaces. The processor's external memory interface is then typically designed to allow off-chip memory to be placed in any of the address spaces, with control pins indicating the selected memory space. In addition, external memory interfaces operate concurrently with accesses to on-chip memory. For example, a DSP processor with three on-chip memory spaces can typically complete a maximum of three memory accesses per instruction cycle, by making one access to each memory space. These three accesses can usually be performed in parallel even if one of them accesses a segment of memory that is located off-chip.<p>
+</a>
+<a name="166653">
+High-performance applications must often use fast static RAM devices for off-chip memory. In such situations, it is important for system hardware designers to scrutinize the timing specifications for DSP processors' external memory ports. Because timing specifications can vary significantly among processors, it is common to find two processors that have the same instruction cycle time but have very different timing specifications for off-chip memory. These differences can have a serious impact on system cost, because faster memories are significantly more expensive than slower memories. Hardware design flexibility is also affected, since more stringent timing specifications may constrain the hardware designer in terms of how the interface circuitry is designed and physically laid out.<p>
+</a>
+<a name="166612">
+<a name="Wait States">
+<h4> Wait States</h4>
+</a>
+<a name="166615">
+As the name implies, wait states are states in which the processor cannot execute its program because it is waiting for access to memory. Wait states occur for three reasons: contention, slow memory, and bus sharing.<p>
+</a>
+<a name="166616">
+<I>Conflict wait states</I> occur when the processor attempts to make multiple simultaneous accesses to a memory that cannot accommodate multiple accesses. This may occur, for example, when a single bank of single-access memory contains both instruction words and data. Since most DSP processors are heavily pipelined, the execution of a single instruction is often spread across several instruction cycles. Therefore, conflict wait states can arise even when a particular single instruction does not require more accesses to a given memory bank than that memory bank can support, because adjacent instructions may require memory access at the same time. Pipelining is discussed in detail in Section 5.8. <p>
+</a>
+<a name="166620">
+Almost all processors recognize the need for conflict wait states and automatically insert the minimum number of conflict wait states needed. Exceptions to this are a few members of the Lucent Technologies DSP16xx family (the DSP1604, DSP1605, and DSP1616). On these processors, attempting to fetch words from both external program and data memory in one instruction cycle results in a correct program word fetch, but the fetched data word is invalid.<p>
+</a>
+<a name="166621">
+Most DSP processors include one or more small banks of fast on-chip RAM and/or ROM that provide one or more accesses per instruction cycle. In many situations, it is necessary or desirable to expand this memory using off-chip memory that is too slow to support a complete memory access within one processor instruction cycle. Typically this is done to save cost, since slower memory chips are less expensive than faster ones. In these cases, the processor is configured to insert <I>programmed wait states</I> during external memory accesses. These wait states are configured by the programmer to deliberately slow down the processor's memory accesses to match the speed of slow memories. Some processors can be programmed to use different numbers of programmed wait states when accessing different regions of off-chip memory, so cost-effective combinations of slower and faster memory can be used.<p>
+</a>
+<a name="166622">
+In some systems, it may not be possible to predict in advance precisely how many wait states will be required to access external memory. For example, when the processor shares an external memory bus with one or more other processors, the processor may have to wait for another processor to relinquish the bus before it can proceed with its own access. Similarly, if dynamic memory (DRAM) is used, the processor may have to wait while the DRAM controller refreshes the DRAM. In these cases, the processor must have the ability to dynamically insert <I>externally requested wait states</I> until it receives a signal from an external bus or memory controller that the external memory is ready to complete the access. For example, the Texas Instruments TMS320C5x provides a special READY pin that can be used by external hardware to signal the processor that it must wait before continuing with an external memory access.<p>
+</a>
+<a name="166623">
+The length of a wait state relative to the length of a processor instruction cycle varies from processor to processor. Wait state lengths typically range from one-quarter of an instruction cycle (as on the Lucent Technologies DSP32C) to a full instruction cycle (as on most processors). Shorter wait states allow more efficient operation, since the delay from the time when the external memory is ready for an access to the time when the wait state ends and the processor completes the access will likely be shorter.<p>
+</a>
+<a name="1350">
+<a name="Multiprocessor Support in External Memory Interfaces">
+<h4> Multiprocessor Support in External Memory Interfaces</h4>
+</a>
+<a name="1381">
+DSP processors intended for use in multiprocessor systems often provide special features in their external memory interfaces to simplify the design and enhance the performance of such systems. The first and most obvious of these features is the provision of two external memory ports, mentioned above. The availability of two external memory ports means that one port can be connected to a local, private memory, while the other is connected to a memory shared with other processors. For example, the Texas Instruments TMS320C4x includes two external memory ports expressly for use in such multiprocessor configurations.<p>
+</a>
+<a name="1363">
+When a multiprocessor system includes two or more processors that share a single external memory bus, a mechanism must be provided for the processors to negotiate control of the bus (<I>bus arbitration</I>) and to prevent the processors that do not have control of the bus from trying to assert values onto the bus. Several DSP processors provide features to facilitate this kind of arrangement, though there are significant differences in the sophistication and flexibility of the features provided. In some cases, a shared bus multiprocessor can be created simply by connecting together the appropriate pins of the processors without the need for any special software or hardware to manage bus arbitration. In other cases, extra software on one or more of the DSP processors and/or external bus arbitration hardware may be required.<p>
+</a>
+<a name="1368">
+An example of basic support for shared bus systems is provided by the Motorola DSP560xx. Two of the DSP processor's pins can be configured to act as <I>bus request</I> and <I>bus grant signals</I>. When an external bus arbitrator (either another processor or dedicated hardware) wants a particular DSP processor to relinquish the shared bus, it asserts that processor's bus request input. The processor then completes any external memory access in progress and relinquishes the bus, acknowledging with the bus grant signal that it has done so. The DSP processor can continue to execute its program as long as no access to the shared bus is required. If an access to the shared bus is required, the processor waits until the bus request signal has been deasserted, indicating that it can again use the shared bus.<p>
+</a>
+<a name="205432">
+The Texas Instruments TMS320C5x provides several features that support multiprocessing. In addition to providing the equivalent of bus request and bus grant signals (called HOLD and HOLDA on the TMS320C5x), the processor also allows an external device to access its on-chip memory. To accomplish this, the external device first asserts the TMS320C5x's HOLD input. When the processor responds by asserting HOLDA, the external device asserts BR, indicating that it wishes to access the TMS320C5x's on-chip memory. The TMS320C5x responds by asserting IAQ. The external device can then read and write the TMS320C5x's on-chip memory by driving TMS320C5x's address, data, and read/write lines. When finished, the external device deasserts HOLD and BR. This allows the creation of multiprocessor systems that do not require external shared memory for interprocessor communications.<p>
+</a>
+<a name="205434">
+A processor feature that simplifies the use of shared variables in shared memory is <I>bus locking</I>, which allows a processor to read the value of a variable from memory, modify it, and write the new value back to memory, while ensuring that this sequence of operations is not interrupted by another processor attempting to update the variable's value. This is sometimes referred to as an <I>atomic test-and-set</I> operation. The Texas Instruments TMS320C3x and TMS320C4x processors provide special instructions and hardware support for bus locking; Texas Instruments refers to these operations as ``interlocked operations.'' <p>
+</a>
+<a name="1372">
+The Analog Devices ADSP-2106x offers a sophisticated shared bus interface. The processor provides on-chip bus arbitration logic that allows direct interconnection of up to six ADSP-2106x devices with no special software or external hardware required for bus arbitration. In addition, the processor allows one DSP processor in a shared-bus configuration to access another processor's on-chip memory, much like on the Texas Instruments TMS320C5x family. This means that interprocessor data moves will not necessarily have to transit through an external shared memory.<p>
+</a>
+<a name="1361">
+In addition to special external memory interface features, the Analog Devices ADSP-2106x and the Texas Instruments TMS320C4x families provide special communications ports to facilitate connections within multiprocessor systems. Features of this type are discussed in detail in Section 5.9, <I>Peripherals</I>.<p>
+</a>
+<a name="1356">
+<a name="Dynamic Memory">
+<h4> Dynamic Memory</h4>
+</a>
+<a name="1378">
+All of the writable memory found on DSP processors and most of the memory found in systems based on DSP processors is <I>static</I> memory, also called <I>SRAM</I>. Static memory is simpler to use and faster than <I>dynamic</I> memory (<I>DRAM</I>), but it also requires more silicon area and is more costly for a given number of bits of memory. The key operational attribute distinguishing static from dynamic memories is that static memories retain their data as long as power is available. Dynamic memories must be <I>refreshed</I> periodically; that is, a special sequence of signals must be applied to reinforce the stored data, or it eventually is lost (typically in a few tens of milliseconds). In addition, interfacing to static memories is usually simpler than interfacing to dynamic memories; the use of dynamic memories usually requires a separate, external DRAM controller to generate the necessary control signals.<p>
+</a>
+<a name="1386">
+Because of the increasing proliferation of DSP processors into low-cost, high-volume products like answering machines and personal computer add-in cards, there has been increased interest in using dynamic memory in DSP systems. DRAM can also be attractive for systems that require large quantities of memory, such as large-scale multiprocessor systems.<p>
+</a>
+
+<a name="1380"> One way to get faster, static RAM-like performance
+from slower, dynamic RAM is the use of paged or <I>static column</I>
+DRAM. These are special types of DRAM chips that allow faster than
+normal access when a group of memory accesses occur within the same
+region (or page) of memory. Some DSP processors, including the Analog
+Devices ADSP-210xx, and the Texas Instruments TMS320C3x and TMS320C4x
+provide memory page boundary detection capabilities. These
+capabilities generally consist of a set of programmable registers,
+which the programmer uses to specify the locations of page boundaries
+in external memory, and circuitry to detect when external memory
+accesses cross page boundaries. In most cases, when the processor
+detects that a memory access has crossed a page boundary, it asserts a
+special output pin. It is then up to the external DRAM controller to
+use a processor input pin to signal back to the processor that it must
+delay its access by inserting wait states while the controller readies
+the DRAM for access to a new page.<p> </a>
+
+<a name="1362">
+As mentioned above, the use of DRAM as external memory for a DSP processor usually requires the use of an external DRAM controller chip. This additional chip may increase the manufacturing cost of the design, which partly defeats the reason for using DRAM in the first place. To address this problem, some DSP processors now incorporate a DRAM controller on-chip. The Motorola DSP56004 and DSP56007, for example, provide on-chip DRAM interfaces that include support for page-mode DRAM.<p>
+</a>
+
+<a name="1384">
+<a name="Direct Memory Access">
+<h4> Direct Memory Access</h4>
+</a>
+<a name="1387">
+<I>Direct memory access (DMA)</I> is a technique whereby data can be transferred to or from the processor's memory without the involvement of the processor itself. DMA is typically used to provide improved performance for input/output devices. Rather than have the processor read data from an I/O device and copy the data into memory or vice versa, a separate <I>DMA controller</I> can handle such transfers more efficiently. This DMA controller may be a peripheral on the DSP chip itself or it may be implemented using external hardware.<p>
+</a>
+<a name="1388">
+Any processor that has a simple bus request/bus grant mechanism can be used with an external DMA controller that accesses external memory. Typically the processor loads the DMA controller with control information including the starting memory address for the transfer, the number of data words to be transferred, the direction of the transfer, and the source or destination peripheral. The DMA controller uses the bus request pin to notify the DSP processor that it is ready to make a transfer to or from external memory. The DSP processor completes its current instruction, relinquishes control of external memory, and signals the DMA controller via the bus grant pin that the DMA transfer can proceed. The DMA controller then transfers the specified number of data words and optionally signals completion to the processor through an interrupt.<p>
+</a>
+<a name="1370">
+Some more-sophisticated DSP processors include a DMA controller on-chip that can access internal and external memory. These DMA controllers vary in their performance and flexibility. In some cases, the processor's available memory bandwidth may be large enough to allow DMA transfers to occur in parallel with normal program instruction and data transfers without any impact on performance. For example, the Texas Instruments TMS320C4x contains a DMA controller that, combined with the TMS320C4x's on-chip memory and on-chip DMA address and data buses, can complete one memory access per instruction cycle independent of the processor. The Motorola DSP96002, the Texas Instruments TMS320C3x family, and the Analog Devices ADSP-2106x family all include on-chip DMA controllers with similar capabilities.<p>
+</a>
+<a name="205236">
+Some DMA controllers can manage multiple DMA transfers in parallel. Such a DMA controller is said to have multiple channels, each of which can manage one transfer, and each of which has its own set of control registers. The TMS320C4x DMA controller supports six channels, and the Analog Devices ADSP-21060 and ADSP-21062 support ten channels. Each channel can be used for memory-memory or memory-peripheral transfers.<p>
+</a>
+<a name="1382">
+In contrast, the Lucent Technologies DSP3210 includes a more limited, two-channel DMA controller that can only be used for transfers to and from the processor's internal serial port. Since the DSP3210 does not have extra memory bandwidth, the currently executing instruction is forced to wait one cycle when the DMA controller accesses memory. This arrangement (where the processor is suspended during DMA bus accesses) is called <I>cycle stealing</I>. The Analog Devices ADSP-21xx and some members of the Texas Instruments TMS320C5x and TMS320C54x families provide a similar capability through a mechanism that Analog Devices calls <I>autobuffering</I>. <p>
+</a>
+<a name="1393">
+<a name="Customization">
+<h3> Customization</h3>
+</a>
+<a name="1074">
+We've already mentioned that many DSP processor vendors offer versions of their processors that are customized by placing user-specified programs and/or data into the on-chip ROM. In addition, several vendors can produce DSP core-based ASICs or customizable DSPs (see Chapter 4). These options have the advantage that they provide the user with more flexibility. These approaches may allow the user to specify memory sizes and configurations (for example, the mix of ROM and RAM) that are best suited to the application at hand. DSP processor vendors offering customizable DSPs or DSP core-based ASICs include Lucent Technologies, Clarkspur Design, DSP Group, SGS-Thomson, Tensleep Design, Texas Instruments, and several other vendors.<p>
+</a>
+<a name="166679">
+Another advantage of customization is that digital logic or microcontrollers that would otherwise surround the DSP processor are eliminated. In high-volume, size-constrained applications, customization reduces cost as well as size.<p>
+</a>
+
+<hr>
+
+<A HREF="../Welcome.html"><IMG SRC="../gifs/button.horizontal.home.gif" alt="[GOTO BDTI HOME]" BORDER=0></A><A HREF="bgtdp.htm#bgtdp_links"><IMG SRC="../gifs/button.horizontal.buyers.guide.2.gif" alt="[GOTO BUYER'S GUIDE TO DSP PROCESSORS]" BORDER=0></A><IMG SRC="../gifs/button.horizontal.sample.excerpts.gif" alt="(VIEWING SAMPLE EXCERPT)" BORDER=0>
+
+<p>
+
+<font size=-3>&#169;1997 Berkeley Design Technology, Inc.<br>Phone: +1 (510) 665-1600 Fax: +1 (510) 665-1680</font><br>
+
+<i><A HREF="#top">Top of page</A><br></i>
+
+</body>
+</html> 
