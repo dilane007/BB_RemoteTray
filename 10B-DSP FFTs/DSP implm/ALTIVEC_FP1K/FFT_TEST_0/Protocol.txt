@@ -1,0 +1,41 @@
+
+	Estimation test for FFT speed for Atlas3-G4(source code from Motorola)
+
+	== INTEGER
+
+	== No AltiVec
+	9800 clk, 8957 clk, 8957 clk, 8956 clk or 392000 ns, 358280 ns, 358280 ns, 358240 ns
+
+	== With AltiVec
+	4429 clk, 1982 clk, 1982 clk, 1981 clk or 177160 ns, 79280 ns, 79280 ns, 79240 ns
+
+	== COMPLEX
+
+	== No AltiVec
+	6542 clk, 5041 clk, 5041 clk, 5040 clk or 261680 ns, 201640 ns, 201640 ns, 201600 ns
+
+	== With AltiVec
+	3152 clk, 1803 clk, 1803 clk, 1803 clk or 126080 ns, 72120 ns, 72120 ns, 72120 ns
+
+	Duration for this total stupid Altivec 2D FFT [1024 * 1024] is 770177 mcs
+
+	Duration for this total stupid Altivec 2D FFT[32 * 32] is 188 mcs
+
+	Complex FFT with AltiVec
+	
+	 128:   395 clk,   159 clk,   159 clk,   158 clk or   15800 ns,   6360 ns,   6360 ns,   6320 ns
+	 256:   618 clk,   355 clk,   355 clk,   355 clk or   24720 ns,  14200 ns,  14200 ns,  14200 ns
+	 512:  1343 clk,   792 clk,   791 clk,   791 clk or   53720 ns,  31680 ns,  31640 ns,  31640 ns
+	1024:  2804 clk,  1803 clk,  1803 clk,  1803 clk or  112160 ns,  72120 ns,  72120 ns,  72120 ns
+	2048:  6108 clk,  4108 clk,  4108 clk,  4108 clk or  244320 ns, 164320 ns, 164320 ns, 164320 ns
+	4096: 15624 clk, 11407 clk, 11401 clk, 11398 clk or  624960 ns, 456280 ns, 456040 ns, 455920 ns
+
+
+2D FFT testS:
+
+	Duration for this total stupid Altivec 2D FFT[32 * 32]	   (64 KB)  is    123 mcs
+	Duration for this total stupid Altivec 2D FFT[64 * 64]	   (256 KB) is    929 mcs
+	Duration for this total stupid Altivec 2D FFT[128 * 128]   (1 MB)   is   3750 mcs
+	Duration for this total stupid Altivec 2D FFT[256 * 256]   (4 MB)   is  16230 mcs
+	Duration for this total stupid Altivec 2D FFT[512 * 512]   (16 MB)  is 180482 mcs
+	Duration for this total stupid Altivec 2D FFT[1024 * 1024] (64 MB)  is 768044 mcs

@@ -1,0 +1,55 @@
+128-pt Fast Fourier Transform Perl Script
+© MOTOROLA, 1997 All Rights Reserved.
+
+DISCLAIMER- PLEASE READ
+
+BY CHOOSING TO DOWNLOAD THE FOLLOWING INTERNET INFORMATION YOU INDICATE YOUR ACCEPTANCE OF THE FOLLOWING TERMS:
+
+1)	Motorola offers the following internet information, software, or related product (herein after Internet Infomation) as a service to its existing and potential customers. Motorola reserves the right to make changes without further notice to any Internet Information; however, Motorola is not obligated to provide any support, upgrades or new releases of the Internet Information
+
+2)	Motorola does not assume any liability  arising out of the application or use of any Internet Information; nor does Motorola convey any license under its intellectual property rights or the rights of others by providing the Internet Information.
+
+3)	The Internet Information is not designed, intended, or authorized for use in systems intended for surgical implant within the body, or other applications intended to support or sustain life, or for any other application in which the failure of the Internet Information, could create a situation where personal injury or death may occur, including, but not limited to Motorola components used in defense, transportation, medical, or nuclear applications. Should you use Internet Information for any such unintended or unauthorized application, you shall indemnify and hold Motorola and its officers, employees, subsidiaries, affiliates, and distributors harmless against all claims, costs, damages, and expenses, and reasonable attorney fees arising out of, directly or indirectly, any claim of personal injury or death associated with such unintended or unauthorized use, even if such claim alleges that Motorola was negligent regarding the design, manufacture, or distribution of the Internet Information.
+
+4)	The Internet Information is provided on an "AS IS" basis.  MOTOROLA MAKES NO WARRANTIES, EXPRESSED OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, OR NONINFRINGEMENT. Any claim against Motorola must be made within ninety (90) days from the date of shipment or transmission from Motorola, and Motorola has no liability thereafter. Any liability is limited to replacement of the item(s) or return of amounts paid for defective items, if any (at your election). IN NO EVENT WILL MOTOROLA BE RESPONSIBLE FOR SPECIAL, INDIRECT, CONSEQUENTIAL OR INCIDENTAL DAMAGES, EVEN IF MOTOROLA HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES. Motorola's liability from any causes pursuant to the Internet Information shall be limited to general money damages in an amount not to exceed the total purchase price of the item, regardless of the form in which legal or equitable action may be brought against Motorola.  
+
+#!/usr/moto/bin/perl
+
+$i = 1;
+
+while (<>) {
+	$real[$i] = hex(substr($_,0,4));
+	$real[$i] = $real[$i] - 0x10000 if $real[$i] > 0x7fff;
+	$real[$i] /= 32768;
+	$imag[$i] = hex(substr($_,4,4));
+	$imag[$i] = $imag[$i] - 0x10000 if $imag[$i] > 0x7fff;
+	$imag[$i] /= 32768;
+	$i += 1;
+}
+$j = 1;
+for ($i=1; $i<=127; $i++) {
+	if ($i < $j) {
+		$treal = $real[$j];
+		$timag = $imag[$j];
+		$real[$j] = $real[$i];
+		$imag[$j] = $imag[$i];
+		$real[$i] = $treal;
+		$imag[$i] = $timag;
+	}
+	$k = 64;
+	while ($k < $j) {
+		$j = $j - $k;
+		$k = $k/2;
+	}
+	$j = $j + $k;
+}
+open(DATAOUT,">assembly.data");
+for ($i = 1; $i<=128; $i++) {
+	$newvar[$i] = sqrt($real[$i] * $real[$i] + $imag[$i] * $imag[$i]);
+	if ($newvar[$i] == 0) { $newvar[$i] = 0.00000001; }
+	$db[$i] = 20 * (log($newvar[$i]) / 2.302585);
+	select(DATAOUT);
+	print"$i $db[$i]\n";
+}
+
+
